@@ -1,3 +1,4 @@
+
 # A Novel Plug-in Module for Fine-grained Visual Classification
 
 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/a-novel-plug-in-module-for-fine-grained-1/fine-grained-image-classification-on-cub-200)](https://paperswithcode.com/sota/fine-grained-image-classification-on-cub-200?p=a-novel-plug-in-module-for-fine-grained-1)
@@ -11,48 +12,123 @@ backbones, including CNN-based or Transformer-based networks to provide strongly
 
 ![framework](./imgs/0001.png)
 
-### 1. Environment setting 
+## 1. Environment setting 
+
+// We move old version to ./v0/
+
+### 1.0. Package
 * install requirements
-* replace folder timm/ to our timm/ folder (for ViT or Swin-T)
+* replace folder timm/ to our timm/ folder (for ViT or Swin-T)  
+    
+    #### pytorch model implementation [timm](https://github.com/rwightman/pytorch-image-models)
+    #### recommand [anaconda](https://www.anaconda.com/products/distribution)
+    #### recommand [weights and biases](https://wandb.ai/site)
+    #### [deepspeed](https://www.deepspeed.ai/getting-started/) // future works
 
-
-#### Prepare dataset
-In this paper, we use 2 large bird's datasets:
+### 1.1. Dataset
+In this paper, we use 2 large bird's datasets to evaluate performance:
 * [CUB-200-2011](http://www.vision.caltech.edu/visipedia/CUB-200-2011.html)
 * [NA-Birds](https://dl.allaboutbirds.org/nabirds)
 
-#### Our pretrained model
+### 1.2. Our pretrained model
 
 Download the pretrained model from this url: https://drive.google.com/drive/folders/1ivMJl4_EgE-EVU_5T8giQTwcNQ6RPtAo?usp=sharing      
 
-* backup/ is our pretrained model path.
+* our pretrained model in backup/V2/ (backup/... is OLD version)
 * resnet50_miil_21k.pth and vit_base_patch16_224_miil_21k.pth are imagenet21k pretrained model (place these file under models/), thanks to https://github.com/Alibaba-MIIL/ImageNet21K/blob/main/MODEL_ZOO.md !!
 
-
-#### OS
+### 1.3. OS
 - [x] Windows10
 - [x] Ubuntu20.04
-- [ ] macOS
+- [x] macOS (CPU only)
 
-### 2. Train
-configuration file:  config.py  
+## 2. Train
+- [x] Single GPU Training
+- [x] DataParallel (single machine multi-gpus)
+- [ ] DistributedDataParallel
+
+(more information: https://pytorch.org/tutorials/intermediate/ddp_tutorial.html)
+
+### 2.1. data
+train data and test data structure:  
 ```
-python train.py --train_root "./CUB200-2011/train/" --val_root "./CUB200-2011/test/"
+├── tain/
+│   ├── class1/
+│   |   ├── img001.jpg
+│   |   ├── img002.jpg
+│   |   └── ....
+│   ├── class2/
+│   |   ├── img001.jpg
+│   |   ├── img002.jpg
+│   |   └── ....
+│   └── ....
+└──
 ```
 
-### 3. Evaluation
-configuration file:  config_eval.py  
+### 2.2. configuration
+you can directly modify yaml file (in ./configs/)
+
+### 2.3. run
 ```
-python eval.py --pretrained_path "./backup/CUB200/best.pth" --val_root "./CUB200-2011/test/"
+python main.py --c ./configs/CUB200_SwinT.yaml
+```
+model will save in ./records/{project_name}/{exp_name}/backup/
+
+
+### 2.4. about costom model
+Building model refers to ./models/builder.py   
+More detail in [how_to_build_pim_model.ipynb](./how_to_build_pim_model.ipynb)
+
+### 2.5. multi-gpus
+comment out main.py line 66
+```
+model = torch.nn.DataParallel(model, device_ids=None)
 ```
 
-### 4. Visualization
-configuration file:  config_plot.py  
+### 2.6.  automatic mixed precision (amp)
+use_amp: True, training time about 3-hours.  
+use_amp: False, training time about 5-hours.  
+
+## 3. Evaluation
+If you want to evaluate our pretrained model (or your model), please give provide configs/eval.yaml (or costom yaml file is fine)
+
+### 3.1. please check yaml
+set yaml (configuration file)
+Key           | Value  | Description | 
+--------------|:------|:------------| 
+train_root    | ~      | set value to ~ (null) means this is not in training mode.  |
+val_root  | ../data/eval/  |  path to validation samples |
+pretrained  | ./pretrained/best.pt  |   pretrained model path |
+
+
+../data/eval/ folder structure:  
 ```
-python plot_heat.py --pretrained_path "./backup/CUB200/best.pth" --img_path "./img/001.png/"
+├── eval/
+│   ├── class1/
+│   |   ├── img001.jpg
+│   |   ├── img002.jpg
+│   |   └── ....
+│   ├── class2/
+│   |   ├── img001.jpg
+│   |   ├── img002.jpg
+│   |   └── ....
+│   └── ....
+└──
+```
+
+### 3.2. run
+```
+python main.py --c ./configs/eval.yaml
+```
+results will show in terminal and been save in ./records/{project_name}/{exp_name}/eval_results.txt
+
+## 4. HeatMap
+```
+python heat.py --pretrained ./best.pt --img ./imgs/001.jpg
 ```
 ![visualization](./imgs/test1_heat.jpg)
 
+- - - - - - 
 
 ### Acknowledgment
 

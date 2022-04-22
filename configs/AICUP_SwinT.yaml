@@ -1,0 +1,33 @@
+project_name: AICUP22-Flowers
+exp_name: T01
+use_wandb: True
+wandb_entity: poyung
+train_root: ./aicup_data
+val_root: ~
+data_size: 384
+num_workers: 2
+batch_size: 64
+model_name: swin-t
+optimizer: SGD
+max_lr: 0.0005
+wdecay: 0.0005
+max_epochs: 50
+warmup_batchs: 0
+use_amp: True
+use_fpn: True
+fpn_size: 512
+use_selection: True
+num_classes: 10
+num_selects: 
+  layer1: 32
+  layer2: 32
+  layer3: 32
+  layer4: 32
+use_combiner: True
+lambda_b: 0.5
+lambda_s: 0.0
+lambda_n: 5.0
+lambda_c: 1.0
+update_freq: 1
+log_freq: 100
+eval_freq: 10
