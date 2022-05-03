@@ -124,10 +124,10 @@ results will show in terminal and been save in ./records/{project_name}/{exp_nam
 
 ## 4. HeatMap
 ```
-python heat.py --pretrained ./best.pt --img ./imgs/001.jpg
+python heat.py --c ./configs/CUB200_SwinT.yaml --img ./vis/001.jpg --save_img ./vis/001/
 ```
-![visualization](./imgs/test1_heat.jpg)
-
+![visualization](./vis/001/rbg_img.jpg)
+![visualization2](./vis/001/mix.jpg)
 - - - - - - 
 
 ### Acknowledgment

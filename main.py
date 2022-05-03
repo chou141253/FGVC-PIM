@@ -137,17 +137,8 @@ def train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_lo
 
             loss = 0.
             for name in outs:
-                if "layer" in name:
-                    if not args.use_fpn:
-                        raise ValueError("FPN not use here.")
-                    if args.lambda_b != 0:
-                        ### here using 'layer1'~'layer4' is default setting, you can change to your own
-                        loss_b = nn.CrossEntropyLoss()(outs[name].mean(1), labels)
-                        loss += args.lambda_b * loss_b
-                    else:
-                        loss_b = 0.0
-
-                elif "select_" in name:
+                
+                if "select_" in name:
                     if not args.use_selection:
                         raise ValueError("Selector not use here.")
                     if args.lambda_s != 0:
@@ -174,6 +165,16 @@ def train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_lo
                     else:
                         loss_n = 0.0
 
+                elif "layer" in name:
+                    if not args.use_fpn:
+                        raise ValueError("FPN not use here.")
+                    if args.lambda_b != 0:
+                        ### here using 'layer1'~'layer4' is default setting, you can change to your own
+                        loss_b = nn.CrossEntropyLoss()(outs[name].mean(1), labels)
+                        loss += args.lambda_b * loss_b
+                    else:
+                        loss_b = 0.0
+                
                 elif "comb_outs" in name:
                     if not args.use_combiner:
                         raise ValueError("Combiner not use here.")
