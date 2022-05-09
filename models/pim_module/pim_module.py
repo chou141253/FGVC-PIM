@@ -146,8 +146,6 @@ class WeaklySelector(nn.Module):
         if self.fpn_size is None:
             logits = {}
         selections = {}
-        preds_1 = {}
-        preds_0 = {}
         for name in x:
             if len(x[name].size()) == 4:
                 B, C, H, W = x[name].size()
@@ -155,15 +153,11 @@ class WeaklySelector(nn.Module):
             C = x[name].size(-1)
             if self.fpn_size is None:
                 logits[name] = getattr(self, "classifier_l_"+name)(x[name])
-            # s_ids, not_s_ids = self.select(logits[name], name)
-            ### torch.gather may cause unsatble training
-            # selections[name] = torch.gather(x[name], 1, s_ids.repeat(1, 1, C), sparse_grad=True)
-            # logits["select_"+name] = torch.gather(logits[name], 1, s_ids.repeat(1, 1, logits[name].size(-1)), sparse_grad=True)
-            # logits["drop_"+name] = torch.gather(logits[name], 1, not_s_ids.repeat(1, 1, logits[name].size(-1)), sparse_grad=True) # sparse_grad=True
+            
             probs = torch.softmax(logits[name], dim=-1)
             selections[name] = []
-            preds_1[name] = []
-            preds_0[name] = []
+            preds_1 = []
+            preds_0 = []
             num_select = self.num_select[name]
             for bi in range(logits[name].size(0)):
                 max_ids, _ = torch.max(probs[bi], dim=-1)
@@ -175,9 +169,12 @@ class WeaklySelector(nn.Module):
                 preds_0[name].append(logits[name][bi][ranks[num_select:]])
             
             selections[name] = torch.stack(selections[name])
-            preds_1[name] = torch.stack(preds_1[name])
-            preds_0[name] = torch.stack(preds_0[name])
-            
+            preds_1 = torch.stack(preds_1)
+            preds_0 = torch.stack(preds_0)
+
+            logits["select_"+name] = preds_1
+            logits["drop_"+name] = preds_0
+
         return selections
 
 
