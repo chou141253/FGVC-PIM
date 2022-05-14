@@ -165,8 +165,8 @@ class WeaklySelector(nn.Module):
                 sf = x[name][bi][ranks[:num_select]]
                 nf = x[name][bi][ranks[num_select:]]  # calculate
                 selections[name].append(sf) # [num_selected, C]
-                preds_1[name].append(logits[name][bi][ranks[:num_select]])
-                preds_0[name].append(logits[name][bi][ranks[num_select:]])
+                preds_1.append(logits[name][bi][ranks[:num_select]])
+                preds_0.append(logits[name][bi][ranks[num_select:]])
             
             selections[name] = torch.stack(selections[name])
             preds_1 = torch.stack(preds_1)
