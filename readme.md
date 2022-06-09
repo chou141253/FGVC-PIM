@@ -128,6 +128,41 @@ python heat.py --c ./configs/CUB200_SwinT.yaml --img ./vis/001.jpg --save_img ./
 ```
 ![visualization](./vis/001/rbg_img.jpg)
 ![visualization2](./vis/001/mix.jpg)
+
+## 5. Infer
+If you want to reason your picture and get the confusion matrix, please give provide configs/eval.yaml (or costom yaml file is fine)
+
+
+### 5.1. please check yaml
+set yaml (configuration file)
+Key           | Value  | Description | 
+--------------|:------|:------------| 
+train_root    | ~      | set value to ~ (null) means this is not in training mode.  |
+val_root  | ../data/eval/  |  path to validation samples |
+pretrained  | ./pretrained/best.pt  |   pretrained model path |
+
+
+../data/eval/ folder structure:  
+```
+├── eval/
+│   ├── class1/
+│   |   ├── img001.jpg
+│   |   ├── img002.jpg
+│   |   └── ....
+│   ├── class2/
+│   |   ├── img001.jpg
+│   |   ├── img002.jpg
+│   |   └── ....
+│   └── ....
+└──
+```
+
+### 5.2. run
+```
+python infer.py --c ./configs/eval.yaml
+```
+results will show in terminal and been save in ./records/{project_name}/{exp_name}/infer_results.txt
+
 - - - - - - 
 
 ### Acknowledgment
