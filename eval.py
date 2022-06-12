@@ -2,6 +2,10 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from typing import Union
+import pandas as pd
+import os
+from sklearn.metrics import confusion_matrix
+import matplotlib.pyplot as plt
 
 
 @torch.no_grad()
@@ -252,10 +256,88 @@ def evaluate(args, model, test_loader):
     return best_top1, best_top1_name, eval_acces
 
 
+def evaluate_cm(args, model, test_loader):
+    """
+    [Notice: Costom Model]
+    If you use costom model, please change fpn module return name (under
+    if args.use_fpn: ...)
+    [Evaluation Metrics]
+    We calculate each layers accuracy, combiner accuracy and average-higest-1 ~
+    average-higest-5 accuracy (average-higest-5 means average all predict scores
+    as final predict)
+    """
+
+    model.eval()
+    corrects = {}
+    total_samples = {}
+    results = []
+
+    with torch.no_grad():
+        """ accumulate """
+        for batch_id, (ids, datas, labels) in enumerate(test_loader):
+
+            score_names = []
+            scores = []
+            datas = datas.to(args.device)
+            outs = model(datas)
+
+            # if args.use_fpn and (0 < args.highest < 5):
+            #     this_name = "layer" + str(args.highest)
+            #     _cal_evalute_metric(corrects, total_samples, outs[this_name].mean(1), labels, this_name, scores, score_names)
+
+            if args.use_combiner:
+                this_name = "combiner"
+                _cal_evalute_metric(corrects, total_samples, outs["comb_outs"], labels, this_name, scores, score_names)
+
+            # _average_top_k_result(corrects, total_samples, scores, labels)
+
+            for i in range(scores[0].shape[0]):
+                results.append([test_loader.dataset.data_infos[ids[i].item()]['path'], int(labels[i].item()),
+                                int(scores[0][i].argmax().item()),
+                                scores[0][i][scores[0][i].argmax().item()].item()])  # 图片路径，标签，预测标签，得分
+
+        """ wirte xlsx"""
+        writer = pd.ExcelWriter(args.save_dir + 'infer_result.xlsx')
+        df = pd.DataFrame(results, columns=["id", "original_label", "predict_label", "goal"])
+        df.to_excel(writer, index=False, sheet_name="Sheet1")
+        writer.save()
+        writer.close()
+
+        """ calculate accuracy """
+
+        best_top1 = 0.0
+        best_top1_name = ""
+        eval_acces = {}
+        for name in corrects:
+            acc = corrects[name] / total_samples[name]
+            acc = round(100 * acc, 3)
+            eval_acces[name] = acc
+            ### only compare top-1 accuracy
+            if "top-1" in name or "highest" in name:
+                if acc > best_top1:
+                    best_top1 = acc
+                    best_top1_name = name
+
+        """ wirte xlsx"""
+        results_mat = np.mat(results)
+        y_actual = results_mat[:, 1].transpose().tolist()[0]
+        y_actual = list(map(int, y_actual))
+        y_predict = results_mat[:, 2].transpose().tolist()[0]
+        y_predict = list(map(int, y_predict))
+
+        folders = os.listdir(args.val_root)
+        folders.sort()  # sort by alphabet
+        print("[dataset] class:", folders)
+        df_confusion = confusion_matrix(y_actual, y_predict)
+        plot_confusion_matrix(df_confusion, folders, args.save_dir + "infer_cm.png", accuracy=best_top1)
+
+    return best_top1, best_top1_name, eval_acces
+
+
 @torch.no_grad()
-def eval_and_save(args, model, val_loader):
+def eval_and_save(args, model, val_loader, tlogger):
     tlogger.print("Start Evaluating")
-    acc, eval_name, accs = evaluate(args, model, val_loader)
+    acc, eval_name, eval_acces = evaluate(args, model, val_loader)
     tlogger.print("....BEST_ACC: {} {}%".format(eval_name, acc))
     ### build records.txt
     msg = "[Evaluation Results]\n"
@@ -266,7 +348,63 @@ def eval_and_save(args, model, val_loader):
         msg += "    {} {}%\n".format(name, eval_acces[name])
     msg += "\n"
     msg += "BEST_ACC: {} {}% ".format(eval_name, acc)
-    
+
     with open(args.save_dir + "eval_results.txt", "w") as ftxt:
         ftxt.write(msg)
 
+
+@torch.no_grad()
+def eval_and_cm(args, model, val_loader, tlogger):
+    tlogger.print("Start Evaluating")
+    acc, eval_name, eval_acces = evaluate_cm(args, model, val_loader)
+    tlogger.print("....BEST_ACC: {} {}%".format(eval_name, acc))
+    ### build records.txt
+    msg = "[Evaluation Results]\n"
+    msg += "Project: {}, Experiment: {}\n".format(args.project_name, args.exp_name)
+    msg += "Samples: {}\n".format(len(val_loader.dataset))
+    msg += "\n"
+    for name in eval_acces:
+        msg += "    {} {}%\n".format(name, eval_acces[name])
+    msg += "\n"
+    msg += "BEST_ACC: {} {}% ".format(eval_name, acc)
+
+    with open(args.save_dir + "infer_results.txt", "w") as ftxt:
+        ftxt.write(msg)
+
+
+def plot_confusion_matrix(cm, label_names, save_name, title='Confusion Matrix acc = ', accuracy=0):
+    plt.rcParams['font.sans-serif'] = ['SimHei']
+    plt.figure(figsize=(len(label_names) / 2, len(label_names) / 2), dpi=100)
+    np.set_printoptions(precision=2)
+    # print("cm:\n",cm)
+
+    # 统计混淆矩阵中每格的概率值
+    x, y = np.meshgrid(np.arange(len(cm)), np.arange(len(cm)))
+    for x_val, y_val in zip(x.flatten(), y.flatten()):
+        try:
+            c = (cm[y_val][x_val] / np.sum(cm, axis=1)[x_val]) * 100
+        except KeyError:
+            c = 0
+        if c > 0.001:
+            plt.text(x_val, y_val, "%0.1f" % (c,), color='red', fontsize=15, va='center', ha='center')
+
+    plt.imshow(cm, interpolation='nearest', cmap=plt.get_cmap('Blues'))
+    plt.title(title + str('{:.3f}'.format(accuracy)))
+    plt.colorbar()
+    plt.xticks(np.arange(len(label_names)), label_names, rotation=45)
+    plt.yticks(np.arange(len(label_names)), label_names)
+    plt.ylabel('Actual label')
+    plt.xlabel('Predict label')
+
+    # offset the tick
+    tick_marks = np.array(range(len(label_names))) + 0.5
+    plt.gca().set_xticks(tick_marks, minor=True)
+    plt.gca().set_yticks(tick_marks, minor=True)
+    plt.gca().xaxis.set_ticks_position('none')
+    plt.gca().yaxis.set_ticks_position('none')
+    plt.grid(True, which='minor', linestyle='-')
+    plt.gcf().subplots_adjust(bottom=0.15)
+
+    # show confusion matrix
+    plt.savefig(save_name, format='png')
+    # plt.show()
