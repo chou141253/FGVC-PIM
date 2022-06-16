@@ -382,7 +382,7 @@ def plot_confusion_matrix(cm, label_names, save_name, title='Confusion Matrix ac
     x, y = np.meshgrid(np.arange(len(cm)), np.arange(len(cm)))
     for x_val, y_val in zip(x.flatten(), y.flatten()):
         try:
-            c = (cm[y_val][x_val] / np.sum(cm, axis=1)[x_val]) * 100
+            c = (cm[y_val][x_val] / np.sum(cm, axis=1)[y_val]) * 100
         except KeyError:
             c = 0
         if c > 0.001:
