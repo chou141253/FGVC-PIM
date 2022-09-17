@@ -32,8 +32,6 @@ In this paper, we use 2 large bird's datasets to evaluate performance:
 
 ### 1.2. Our pretrained model
 
-Download the pretrained model from this url: https://drive.google.com/drive/folders/1ivMJl4_EgE-EVU_5T8giQTwcNQ6RPtAo?usp=sharing      
-
 * our pretrained model in https://idocntnu-my.sharepoint.com/:f:/g/personal/81075001h_eduad_ntnu_edu_tw/EkypiS-W0SFDkxnHN1Imv5oBPgoRblDgW8wHuVA0c6Ka7Q?e=FhBLDC
 * cub200 and nabird dataset: https://idocntnu-my.sharepoint.com/:f:/g/personal/81075001h_eduad_ntnu_edu_tw/EoBb2gijwclEulDGxv_hOtIBeKuV3M6qy3IGIGMhm-jq0g?e=tcg6tm
 * resnet50_miil_21k.pth and vit_base_patch16_224_miil_21k.pth are imagenet21k pretrained model (place these file under models/), thanks to https://github.com/Alibaba-MIIL/ImageNet21K/blob/main/MODEL_ZOO.md !!
