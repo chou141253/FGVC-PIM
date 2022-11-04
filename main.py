@@ -75,7 +75,7 @@ def set_environment(args, tlogger):
     """
     
     if train_loader is None:
-        return train_loader, val_loader, model, None, None, None, None
+        return train_loader, val_loader, model, None, None, None, None, 0
     
     ### = = = =  Optimizer = = = =  
     tlogger.print("Building Optimizer....")
@@ -250,7 +250,7 @@ def main(args, tlogger):
             tlogger.print()
         else:
             from eval import eval_and_save
-            eval_and_save(args, model, val_loader)
+            eval_and_save(args, model, val_loader, tlogger)
             break
 
         eval_freq_schedule(args, epoch)
