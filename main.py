@@ -10,7 +10,7 @@ from data.dataset import build_loader
 from utils.costom_logger import timeLogger
 from utils.config_utils import load_yaml, build_record_folder, get_args
 from utils.lr_schedule import cosine_decay, adjust_lr, get_lr
-from eval import evaluate, cal_train_metrics
+from eval import evaluate, cal_train_metrics, eval_and_save
 
 warnings.simplefilter("ignore")
 
@@ -75,7 +75,7 @@ def set_environment(args, tlogger):
     """
     
     if train_loader is None:
-        return train_loader, val_loader, model, None, None, None, None
+        return train_loader, val_loader, model, None, None, None, None, 0
     
     ### = = = =  Optimizer = = = =  
     tlogger.print("Building Optimizer....")
@@ -249,8 +249,7 @@ def main(args, tlogger):
             train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_loader)
             tlogger.print()
         else:
-            from eval import eval_and_save
-            eval_and_save(args, model, val_loader)
+            eval_and_save(args, model, val_loader, tlogger)
             break
 
         eval_freq_schedule(args, epoch)
